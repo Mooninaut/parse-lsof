@@ -57,16 +57,20 @@ for line in lines:
   elif prefix == FID:
     fid = rest # not used
   elif prefix == HOST:
-    host, port = rest.split(':')
+    host, port = rest.split(PORT)
     port = int(port)
     hostWidth = max(hostWidth, len(host))
     if not host in results[command]:
       results[command][host] = {}
     results[command][host][port] = True
 
+def keyify(k_v):
+  command = k_v[0] # tuple of string:dictionary
+  return (command.lower(), command) # tuple of string:string
+
 for command, hostDict in sorted(
     results.items(),
-    key = lambda command: command[0].lower()
+    key = keyify # sort case-insensitive, use case to break ties
   ):
   print(command)
   for host, portDict in sorted(hostDict.items()):
