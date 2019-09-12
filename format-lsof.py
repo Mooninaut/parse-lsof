@@ -5,10 +5,11 @@ import subprocess
 from typing import List
 
 
-COMMAND = 0
-PID = 1
-HOST = 8
-PORT = 9
+COMMAND = 'c'
+PID = 'p'
+HOST = 'n'
+PORT = ':'
+FID = 'f'
 
 def mergeRuns(numbers: List[int]) -> List[str]:
   if len(numbers) == 0:
@@ -32,26 +33,36 @@ lines = subprocess.check_output([
   '+c0',          # Print all characters of command name
   '-iTCP',        # Only list TCP streams
   '-sTCP:LISTEN', # Only list streams in state LISTEN
-  '-P'            # Do not convert port numbers to service names
+  '-P',           # Do not convert port numbers to service names
+  '-Fpcn'         # Output machine-readable format with process IDs, command names, and Internet addresses
 ]).decode('utf-8').splitlines()
 
-# remove header row
-lines.pop(0)
+command = ''
+pid = ''
+host = ''
+port = ''
+fid = ''
 
 for line in lines:
-  words = re.split(r'[\s:]+', line) # split on whitespace OR colon
-
-  command = f"{words[COMMAND]}:{words[PID]}"
-  host    = words[HOST]
-  port    = int(words[PORT])
-
-  hostWidth = max(hostWidth, len(host))
-  command = re.sub(r'\\x20', ' ', command) # unmangle spaces
-  if not command in results:
-    results[command] = {}
-  if not host in results[command]:
-    results[command][host] = {}
-  results[command][host][port] = True
+  prefix = line[0]
+  rest = line[1:]
+  if prefix == PID:
+    pid = rest
+  elif prefix == COMMAND:
+    command = rest
+    command = re.sub(r'\\x20', ' ', command)
+    command = f"{command}:{pid}"
+    if not command in results:
+      results[command] = {}
+  elif prefix == FID:
+    fid = rest # not used
+  elif prefix == HOST:
+    host, port = rest.split(':')
+    port = int(port)
+    hostWidth = max(hostWidth, len(host))
+    if not host in results[command]:
+      results[command][host] = {}
+    results[command][host][port] = True
 
 for command, hostDict in sorted(
     results.items(),
