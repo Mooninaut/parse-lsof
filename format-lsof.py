@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 import re
-import sys
 import subprocess
+import sys
 from typing import List
-
 
 COMMAND = 'c'
 PID = 'p'
@@ -34,7 +33,7 @@ lines = subprocess.check_output([
   '-iTCP',        # Only list TCP streams
   '-sTCP:LISTEN', # Only list streams in state LISTEN
   '-P',           # Do not convert port numbers to service names
-  '-Fpcn'         # Output machine-readable format with process IDs, command names, and Internet addresses
+  '-Fpcn'         # Output machine-readable [F]ormat with [p]rocess IDs, [c]ommand names, and [n]etwork addresses
 ]).decode('utf-8').splitlines()
 
 command = ''
@@ -57,7 +56,8 @@ for line in lines:
   elif prefix == FID:
     fid = rest # not used
   elif prefix == HOST:
-    host, port = rest.split(PORT)
+    # use rsplit and limit to 1 split (2 results) to handle IPv6 [xxxx:y::z]:port type addresses
+    host, port = rest.rsplit(PORT, 1)
     port = int(port)
     hostWidth = max(hostWidth, len(host))
     if not host in results[command]:
